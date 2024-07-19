@@ -1,0 +1,37 @@
+---
+- name: Print Hello World on dynamic inventory
+
+
+  tasks:
+
+    - name: Wait for VMs to be reachable
+      wait_for:
+        host: "{{ item.ip[0] }}"
+        port: 22
+        delay: 5
+        timeout: 60
+      loop: "{{ order }}"
+
+    - name: start command module
+      ansible.builtin.command: "{{ item.stopcmd }}"
+      delegate_to: "{{ item.ip[0] }}"
+      loop: "{{ order }}"
+
+    - name: check status command module for checking the status.
+      ansible.builtin.command: "{{ item.statuscmd }}"
+      delegate_to: "{{ item.ip[0] }}"
+      loop: "{{ order }}"
+      register: command_output
+
+
+    - name: Print the output of check status command module
+      ansible.builtin.debug:
+        msg: "STATUS: Success {{ item.item.ip[0] }}"
+      when: "'Down' in item.stdout"
+      loop: "{{ command_output.results }}"
+
+    - name: Print the output of check status command module
+      ansible.builtin.debug:
+        msg: "STATUS: Failed to shutdown service {{ item.item.ip[0] }}"
+      when: "'Down' not in item.stdout"
+      loop: "{{ command_output.results }}"
