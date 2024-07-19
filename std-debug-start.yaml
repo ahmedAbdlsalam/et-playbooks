@@ -1,0 +1,33 @@
+---
+- name: Print Hello World on dynamic inventory
+  become: true
+  become_method: sudo
+  become_user: root
+  hosts: localhost
+
+  tasks:
+
+    - name: Debug - Wait for VMs to be reachable
+      ansible.builtin.debug:
+        msg: "Debug: wait_for task would run with host: {{ item.ip[0] }}, port: 22, delay: 5, timeout: 60"
+      loop: "{{ order }}"
+
+    - name: Debug - start command module
+      ansible.builtin.debug:
+        msg: "Debug: command module would run '{{ item.startcmd }}' on host {{ item.ip[0] }}"
+      loop: "{{ order }}"
+
+    - name: Debug - check status command module for checking the status
+      ansible.builtin.debug:
+        msg: "Debug: command module would run '{{ item.statuscmd }}' on host {{ item.ip[0] }}"
+      loop: "{{ order }}"
+
+    # - name: Debug - Print the output of check status command module (Success)
+    #   ansible.builtin.debug:
+    #     msg: "Debug: Would print 'STATUS: Success {{ item.item.ip[0] }}' if 'up' was in item.stdout"
+    #   loop: "{{ order }}"
+
+    # - name: Debug - Print the output of check status command module (Failed)
+    #   ansible.builtin.debug:
+    #     msg: "Debug: Would print 'STATUS: Failed to shutdown service {{ item.item.ip[0] }}' if 'up' was not in item.stdout"
+    #   loop: "{{ order }}"
