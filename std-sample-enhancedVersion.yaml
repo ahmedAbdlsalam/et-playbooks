@@ -1,0 +1,90 @@
+---
+- name: Service Management with Error Handling and Rollback
+  become: true
+  become_user: "{{ item.user }}"
+  hosts: localhost
+  vars:
+    rollback_required: false
+    failed_vms: []
+
+  tasks:
+    - name: Wait for VMs to be reachable
+      wait_for:
+        host: "{{ item.ip[0] }}"
+        port: 22
+        delay: 5
+        timeout: 60
+      loop: "{{ order }}"
+      register: reachability_result
+      ignore_errors: yes
+
+    - name: Set fact for unreachable VMs
+      set_fact:
+        unreachable_vms: "{{ reachability_result.results | selectattr('failed', 'equalto', true) | map(attribute='item') | list }}"
+
+    - name: Fail if any VM is unreachable
+      fail:
+        msg: "The following VMs are unreachable: {{ unreachable_vms | map(attribute='ip') | join(', ') }}"
+      when: unreachable_vms | length > 0
+
+    - name: Start services
+      block:
+        - name: Execute start command
+          ansible.builtin.command: "{{ item.startcmd }}"
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order }}"
+          register: start_result
+          
+        - name: Check service status
+          ansible.builtin.command: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order }}"
+          register: status_result
+
+        - name: Evaluate service status
+          ansible.builtin.assert:
+            that: "'up' in item.stdout"
+            fail_msg: "Failed to start service on {{ item.item.ip[0] }}"
+            success_msg: "Successfully started service on {{ item.item.ip[0] }}"
+          loop: "{{ status_result.results }}"
+          register: assert_result
+          ignore_errors: yes
+
+      rescue:
+        - name: Set rollback flag
+          set_fact:
+            rollback_required: true
+            failed_vms: "{{ failed_vms + [item.item] }}"
+          loop: "{{ assert_result.results }}"
+          when: item.failed
+
+    - name: Perform rollback if needed
+      block:
+        - name: Stop services on failed VMs
+          ansible.builtin.command: "{{ item.stopcmd }}"
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ failed_vms }}"
+          when: rollback_required
+
+        - name: Restart services on successfully started VMs
+          ansible.builtin.command: "{{ item.startcmd }}"
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order | difference(failed_vms) }}"
+          when: rollback_required
+
+      always:
+        - name: Final status check
+          ansible.builtin.command: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order }}"
+          register: final_status
+
+        - name: Display final status
+          ansible.builtin.debug:
+            msg: "Final status for {{ item.item.ip[0] }}: {{ 'UP' if 'up' in item.stdout else 'DOWN' }}"
+          loop: "{{ final_status.results }}"
+
+        - name: Fail if rollback was required
+          fail:
+            msg: "Operation failed and rollback was performed. Check the logs for details."
+          when: rollback_required
