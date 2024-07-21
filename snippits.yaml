@@ -1,0 +1,43 @@
+---
+#for launching a job template from another job template.
+# Important considerations:
+# a. Installation: Ensure that the ansible.controller collection is installed in your Ansible Automation Platform environment.
+# b. Credentials: The task that launches the job template needs appropriate permissions in Ansible Automation Platform.
+# c. Waiting for completion: By default, the job_launch module doesn't wait for the launched job to complete. If you need to wait and get the results, you can use the wait: yes parameter.
+# d. Error handling: Consider how you want to handle failures of the launched job template.
+
+
+
+
+
+- name: Launch another job template
+  ansible.controller.job_launch:
+    job_template: "Name of the other job template"
+    inventory: "Inventory to use"
+    credential: "Credential to use"
+    extra_vars:
+      var1: value1
+      var2: value2
+  register: job_result
+
+
+# Alternative approach using REST API:
+# If you prefer not to use the ansible.controller collection or if it's not available, 
+# you can also use the Ansible Automation Platform REST API directly with the uri module:
+
+- name: Launch job template via API
+  ansible.builtin.uri:
+    url: "https://your-aap-server/api/v2/job_templates/{{ job_template_id }}/launch/"
+    method: POST
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: yes
+    status_code: 201
+    body_format: json
+    body:
+      extra_vars:
+        var1: value1
+        var2: value2
+  register: api_response
+
+  
