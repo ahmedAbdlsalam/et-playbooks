@@ -1,8 +1,5 @@
 ---
 - name: Service Management with Error Handling and Rollback
-  become: true
-  become_user: "{{ item.user }}"
-  hosts: localhost
   vars:
     rollback_required: false
     failed_vms: []
@@ -10,7 +7,7 @@
   tasks:
     - name: Wait for VMs to be reachable
       wait_for:
-        host: "{{ item.ip[0] }}"
+        host: "{{ item.vmhost }}"
         port: 22
         delay: 5
         timeout: 60
@@ -31,7 +28,7 @@
       block:
         - name: Execute start command
           ansible.builtin.command: "{{ item.startcmd }}"
-          delegate_to: "{{ item.ip[0] }}"
+          delegate_to: "{{ item.vmhost }}"
           loop: "{{ order }}"
           register: start_result
           
