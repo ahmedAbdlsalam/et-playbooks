@@ -1,0 +1,60 @@
+{
+    "order": [
+        {
+            "displayName": "dx956",
+            "uuid": 91,
+            "vmhost": "dx956",
+            "startcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/startup.sh",
+            "stopcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/shutdown.sh",
+            "statuscmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/ps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "dx957",
+            "uuid": 92,
+            "vmhost": "dx957",
+            "startcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/startup.sh",
+            "stopcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/shutdown.sh",
+            "statuscmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/ps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "dx958",
+            "uuid": 93,
+            "vmhost": "dx958",
+            "startcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/startup.sh",
+            "stopcmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/shutdown.sh",
+            "statuscmd": "/OPT/OV/JAVA/apache-tomcat-7.0.59/bin/ps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "au595",
+            "uuid": 94,
+            "vmhost": "au595",
+            "startcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binstartup.sh",
+            "stopcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binshutdown.sh",
+            "statuscmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "au596",
+            "uuid": 95,
+            "vmhost": "au596",
+            "startcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binstartup.sh",
+            "stopcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binshutdown.sh",
+            "statuscmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "au597",
+            "uuid": 96,
+            "vmhost": "au597",
+            "startcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binstartup.sh",
+            "stopcmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binshutdown.sh",
+            "statuscmd": "/opt/OV/JAVA/apache-tomcat-7.0.59/binps -eaf | grep -i tomcat"
+        },
+        {
+            "displayName": "au568",
+            "uuid": 97,
+            "vmhost": "au568",
+            "startcmd": "/opt/OV/HPSM/ServiceManager9.40/Server/RUN./smstart",
+            "stopcmd": "/opt/OV/HPSM/ServiceManager9.40/Server/RUN./smstop -F",
+            "statuscmd": "/opt/OV/HPSM/ServiceManager9.40/Server/RUN./smstatus"
+        }
+    ]
+}

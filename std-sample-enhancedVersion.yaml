@@ -1,5 +1,8 @@
 ---
-- name: Service Management with Error Handling and Rollback
+- name: Service Management with Enhanced Error Handling and Flexible Validation
+  become: true
+  become_user: "{{ item.user }}"
+  hosts: localhost
   vars:
     rollback_required: false
     failed_vms: []
@@ -7,7 +10,7 @@
   tasks:
     - name: Wait for VMs to be reachable
       wait_for:
-        host: "{{ item.vmhost }}"
+        host: "{{ item.ip[0] }}"
         port: 22
         delay: 5
         timeout: 60
@@ -28,22 +31,46 @@
       block:
         - name: Execute start command
           ansible.builtin.command: "{{ item.startcmd }}"
-          delegate_to: "{{ item.vmhost }}"
+          delegate_to: "{{ item.ip[0] }}"
           loop: "{{ order }}"
           register: start_result
+
+        - name: Wait for services to start (if port is specified)
+          wait_for:
+            host: "{{ item.ip[0] }}"
+            port: "{{ item.check_port | default(omit) }}"
+            timeout: 300
+          loop: "{{ order }}"
+          when: item.check_port is defined
           
-        - name: Check service status
+        - name: Check service status (command method)
           ansible.builtin.command: "{{ item.statuscmd }}"
           delegate_to: "{{ item.ip[0] }}"
           loop: "{{ order }}"
           register: status_result
+          when: item.statuscmd is defined and item.statuscmd | length > 0
+          ignore_errors: yes
+
+        - name: Check service status (URL method)
+          uri:
+            url: "{{ item.check_url }}"
+            method: GET
+            status_code: 200
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order }}"
+          register: url_status_result
+          when: item.check_url is defined
+          ignore_errors: yes
 
         - name: Evaluate service status
           ansible.builtin.assert:
-            that: "'up' in item.stdout"
+            that: >-
+              (item.statuscmd is defined and item.stdout is regex(item.success_regex | default('up'))) or
+              (item.check_url is defined and item.status == 200) or
+              (item.check_port is defined)
             fail_msg: "Failed to start service on {{ item.item.ip[0] }}"
             success_msg: "Successfully started service on {{ item.item.ip[0] }}"
-          loop: "{{ status_result.results }}"
+          loop: "{{ status_result.results + url_status_result.results }}"
           register: assert_result
           ignore_errors: yes
 
@@ -70,16 +97,38 @@
           when: rollback_required
 
       always:
-        - name: Final status check
+        - name: Final status check (command method)
           ansible.builtin.command: "{{ item.statuscmd }}"
           delegate_to: "{{ item.ip[0] }}"
           loop: "{{ order }}"
-          register: final_status
+          register: final_status_cmd
+          when: item.statuscmd is defined and item.statuscmd | length > 0
+          ignore_errors: yes
+
+        - name: Final status check (URL method)
+          uri:
+            url: "{{ item.check_url }}"
+            method: GET
+          delegate_to: "{{ item.ip[0] }}"
+          loop: "{{ order }}"
+          register: final_status_url
+          when: item.check_url is defined
+          ignore_errors: yes
 
         - name: Display final status
           ansible.builtin.debug:
-            msg: "Final status for {{ item.item.ip[0] }}: {{ 'UP' if 'up' in item.stdout else 'DOWN' }}"
-          loop: "{{ final_status.results }}"
+            msg: >-
+              Final status for {{ item.item.ip[0] }}:
+              {% if item.item.statuscmd is defined %}
+                {{ 'UP' if item.stdout is regex(item.item.success_regex | default('up')) else 'DOWN' }}
+              {% elif item.item.check_url is defined %}
+                {{ 'UP' if item.status == 200 else 'DOWN' }}
+              {% elif item.item.check_port is defined %}
+                {{ 'UP (Port check only)' }}
+              {% else %}
+                UNKNOWN (No status check method defined)
+              {% endif %}
+          loop: "{{ final_status_cmd.results + final_status_url.results }}"
 
         - name: Fail if rollback was required
           fail:
