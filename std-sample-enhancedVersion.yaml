@@ -16,7 +16,7 @@
       set_fact:
         rollback_capable_vms: "{{ order | selectattr('statuscmd', 'defined') | selectattr('success_regex', 'defined') | list }}"
 
-    - name: Analyze and print playbook actions
+    - name: Analyze payload and print playbook actions
       ansible.builtin.set_fact:
         playbook_actions: >-
           {% set actions = [] %}
