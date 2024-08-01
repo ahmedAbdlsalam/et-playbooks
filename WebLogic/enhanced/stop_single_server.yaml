@@ -1,0 +1,43 @@
+---
+- name: Stop Managed Server
+  block:
+    - name: Attempt to stop server
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/{{ current_server.name }}/shutdown"
+        method: POST
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          X-Requested-By: "MyClient"
+          Accept: "application/json"
+          Content-Type: "application/json"
+        body_format: json
+        body: 
+          timeout: 300
+          ignoreSessions: true
+        status_code: [200, 202]
+        validate_certs: no
+        timeout: 60
+      register: shutdown_result
+      ignore_errors: yes
+
+    - name: Wait for server to stop
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/{{ current_server.name }}?fields=state"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Accept: "application/json"
+        return_content: yes
+        validate_certs: no
+      register: final_server_status
+      until: final_server_status.json.state == 'SHUTDOWN'
+      retries: 20
+      delay: 30
+
+    - name: Display final server status
+      debug:
+        msg: "The managed server {{ current_server.name }} is now in {{ final_server_status.json.state }} state."

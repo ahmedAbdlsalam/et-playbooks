@@ -1,0 +1,56 @@
+---
+- name: Manage WebLogic via REST API
+  hosts: weblogic_servers
+  vars:
+    admin_url: "http://admin-server:7001"
+    rest_base_url: "{{ admin_url }}/management/weblogic/latest"
+    admin_user: weblogic
+    admin_password: welcome1
+  tasks:
+    - name: Start Admin Server
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/AdminServer/start"
+        method: POST
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        status_code: [200, 202]
+      register: admin_start_result
+
+    - name: Wait for Admin Server to start
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/AdminServer"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        return_content: yes
+      register: admin_status
+      until: admin_status.json.item.state == "RUNNING"
+      retries: 30
+      delay: 10
+
+    - name: Start Managed Server
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/ManagedServer1/start"
+        method: POST
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        status_code: [200, 202]
+      register: managed_start_result
+
+    - name: Deploy Application
+      uri:
+        url: "{{ rest_base_url }}/edit/appDeployments"
+        method: POST
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          name: "MyApp"
+          sourcePath: "/path/to/myapp.war"
+          targets: ["ManagedServer1"]
+        status_code: [200, 201]
+      register: deploy_result

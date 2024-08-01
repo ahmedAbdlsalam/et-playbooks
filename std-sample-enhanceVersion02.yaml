@@ -1,0 +1,245 @@
+---
+- name: Service Management with Enhanced Error Handling and Flexible Validation for Linux and Windows
+  become: true
+  hosts: localhost
+  vars:
+    rollback_required: false
+    failed_vms: []
+    windows_connection_vars:
+      ansible_connection: winrm
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_transport: ntlm
+
+  tasks:
+    - name: Analyze payload and set rollback capability
+      set_fact:
+        rollback_capable_vms: "{{ order | selectattr('statuscmd', 'defined') | selectattr('success_regex', 'defined') | list }}"
+
+    - name: Analyze and print playbook actions
+      ansible.builtin.set_fact:
+        playbook_actions: >-
+          {% set actions = [] %}
+          {% for item in order %}
+          {% if item.os == 'Linux' %}
+          {% set _ = actions.append('Start service on Linux VM: ' ~ item.vmhost) %}
+          {% elif item.os == 'Windows' %}
+          {% set _ = actions.append('Start service on Windows VM: ' ~ item.vmhost) %}
+          {% endif %}
+          {% if item.check_port is defined %}
+          {% set _ = actions.append('Check port ' ~ item.check_port ~ ' on ' ~ item.vmhost) %}
+          {% endif %}
+          {% if item.check_url is defined %}
+          {% set _ = actions.append('Check URL ' ~ item.check_url ~ ' on ' ~ item.vmhost) %}
+          {% endif %}
+          {% if item.statuscmd is defined %}
+          {% set _ = actions.append('Run status command on ' ~ item.vmhost) %}
+          {% endif %}
+          {% endfor %}
+          {{ actions }}
+
+    - name: Print playbook actions and important notes
+      ansible.builtin.debug:
+        msg: 
+          - "This playbook will perform the following actions:"
+          - "{{ playbook_actions }}"
+          - ""
+          - "Important Notes:"
+          - "- Validation and rollback mechanisms are based on status commands and success regex provided in the payload."
+          - "- Rollback will only be attempted for VMs with both status command and success regex defined."
+          - "- Number of VMs capable of rollback: {{ rollback_capable_vms | length }} out of {{ order | length }}"
+          - "- VMs without rollback capability: {{ order | difference(rollback_capable_vms) | map(attribute='vmhost') | list }}"
+          - "- Ensure all necessary data is provided in the payload for proper functionality."
+  
+    - name: Wait for VMs to be reachable (Linux)
+      wait_for:
+        host: "{{ item.vmhost }}"
+        port: 22
+        delay: 5
+        timeout: 60
+      loop: "{{ order }}"
+      register: reachability_result_linux
+      when: item.os == 'Linux'
+      ignore_errors: yes
+
+    - name: Wait for VMs to be reachable (Windows)
+      win_wait_for:
+        host: "{{ item.vmhost }}"
+        port: 5985  # WinRM port
+        delay: 5
+        timeout: 60
+      loop: "{{ order }}"
+      register: reachability_result_windows
+      when: item.os == 'Windows'
+      ignore_errors: yes
+      vars: "{{ windows_connection_vars }}"
+
+    - name: Set fact for unreachable VMs
+      set_fact:
+        unreachable_vms: "{{ (reachability_result_linux.results + reachability_result_windows.results) | selectattr('failed', 'equalto', true) | map(attribute='item') | list }}"
+
+    - name: Fail if any VM is unreachable
+      fail:
+        msg: "The following VMs are unreachable: {{ unreachable_vms | map(attribute='vmhost') | join(', ') }}"
+      when: unreachable_vms | length > 0
+
+    - name: Start services
+      block:
+        - name: Execute start command (Linux)
+          ansible.builtin.command: "{{ item.startcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          when: item.os == 'Linux'
+          register: start_result_linux
+
+        - name: Execute start command (Windows)
+          win_shell: "{{ item.startcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          when: item.os == 'Windows'
+          register: start_result_windows
+          vars: "{{ windows_connection_vars }}"
+
+        - name: Wait for services to start (if port is specified) - Linux
+          wait_for:
+            host: "{{ item.vmhost }}"
+            port: "{{ item.check_port | default(omit) }}"
+            timeout: 300
+          loop: "{{ order }}"
+          when: item.check_port is defined and item.os == 'Linux'
+
+        - name: Wait for services to start (if port is specified) - Windows
+          win_wait_for:
+            host: "{{ item.vmhost }}"
+            port: "{{ item.check_port | default(omit) }}"
+            timeout: 300
+          loop: "{{ order }}"
+          when: item.check_port is defined and item.os == 'Windows'
+          vars: "{{ windows_connection_vars }}"
+          
+        - name: Check service status (command method) - Linux
+          ansible.builtin.command: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: status_result_linux
+          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Linux'
+          ignore_errors: yes
+
+        - name: Check service status (command method) - Windows
+          win_shell: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: status_result_windows
+          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
+          ignore_errors: yes
+          vars: "{{ windows_connection_vars }}"
+
+        - name: Check service status (URL method) - Both Linux and Windows
+          uri:
+            url: "{{ item.check_url }}"
+            method: GET
+            status_code: 200
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: url_status_result
+          when: item.check_url is defined
+          ignore_errors: yes
+
+        - name: Evaluate service status
+          ansible.builtin.assert:
+            that: >-
+              (item.statuscmd is defined and item.stdout is regex(item.success_regex | default('up'))) or
+              (item.check_url is defined and item.status == 200) or
+              (item.check_port is defined)
+            fail_msg: "Failed to start service on {{ item.item.vmhost }}"
+            success_msg: "Successfully started service on {{ item.item.vmhost }}"
+          loop: "{{ status_result_linux.results + status_result_windows.results + url_status_result.results }}"
+          register: assert_result
+          ignore_errors: yes
+
+      rescue:
+        - name: Set rollback flag
+          set_fact:
+            rollback_required: true
+            failed_vms: "{{ failed_vms + [item.item] }}"
+          loop: "{{ assert_result.results }}"
+          when: item.failed
+
+    - name: Perform rollback if needed
+      block:
+        - name: Stop services on failed VMs (Linux)
+          ansible.builtin.command: "{{ item.stopcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
+          when: rollback_required and item.os == 'Linux'
+
+        - name: Stop services on failed VMs (Windows)
+          win_shell: "{{ item.stopcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
+          when: rollback_required and item.os == 'Windows'
+          vars: "{{ windows_connection_vars }}"
+
+        - name: Restart services on successfully started VMs (Linux)
+          ansible.builtin.command: "{{ item.startcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order | difference(failed_vms) | intersect(rollback_capable_vms) }}"
+          when: rollback_required and item.os == 'Linux'
+
+        - name: Restart services on successfully started VMs (Windows)
+          win_shell: "{{ item.startcmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order | difference(failed_vms) | intersect(rollback_capable_vms) }}"
+          when: rollback_required and item.os == 'Windows'
+          vars: "{{ windows_connection_vars }}"
+
+      always:
+        - name: Final status check (command method) - Linux
+          ansible.builtin.command: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: final_status_cmd_linux
+          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Linux'
+          ignore_errors: yes
+
+        - name: Final status check (command method) - Windows
+          win_shell: "{{ item.statuscmd }}"
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: final_status_cmd_windows
+          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
+          ignore_errors: yes
+          vars: "{{ windows_connection_vars }}"
+
+        - name: Final status check (URL method) - Both Linux and Windows
+          uri:
+            url: "{{ item.check_url }}"
+            method: GET
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          register: final_status_url
+          when: item.check_url is defined
+          ignore_errors: yes
+
+        - name: Display final status
+          ansible.builtin.debug:
+            msg: >-
+              Final status for {{ item.item.vmhost }} ({{ item.item.os }}):
+              {% if item.item.statuscmd is defined %}
+                {{ 'UP' if item.stdout is regex(item.item.success_regex | default('up')) else 'DOWN' }}
+              {% elif item.item.check_url is defined %}
+                {{ 'UP' if item.status == 200 else 'DOWN' }}
+              {% elif item.item.check_port is defined %}
+                {{ 'UP (Port check only)' }}
+              {% else %}
+                UNKNOWN (No status check method defined)
+              {% endif %}
+          loop: "{{ final_status_cmd_linux.results + final_status_cmd_windows.results + final_status_url.results }}"
+
+        - name: Fail if rollback was required
+          fail:
+            msg: "Operation failed and rollback was performed. Check the logs for details."
+          when: rollback_required
+
+
+      
+    #

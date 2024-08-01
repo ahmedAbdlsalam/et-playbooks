@@ -1,0 +1,11 @@
+this for building an execution environment to host the enhanced ansible playbook,
+which contains Windows modues and linux basic modules.
+
+
+
+run the following command:
+ansible-builder build -t windows-ee:latest
+
+This command will create a container image named windows-ee:latest.
+
+

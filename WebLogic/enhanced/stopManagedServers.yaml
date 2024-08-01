@@ -1,0 +1,67 @@
+---
+- name: Stop WebLogic Managed Servers
+  hosts: all
+  vars:
+    admin_url: "http://192.168.21.163:7001"
+    rest_base_url: "{{ admin_url }}/management/weblogic/latest"
+    admin_user: weblogic
+    admin_password: P@ssw0rd
+
+  tasks:
+    - name: Check if Admin Server is accessible
+      uri:
+        url: "{{ admin_url }}/console"
+        method: GET
+        status_code: [200, 302, 401, 403]
+        validate_certs: no
+      register: admin_server_check
+      ignore_errors: yes
+
+    - name: Fail if Admin Server is not accessible
+      fail:
+        msg: "Unable to connect to Admin Server. Please ensure it's running and accessible."
+      when: admin_server_check.status == -1
+
+    - name: Get all servers
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes?links=none&fields=name,state"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Accept: "application/json"
+        status_code: [200]
+        validate_certs: no
+      register: all_servers
+
+    - name: Display all servers
+      debug:
+        var: all_servers.json
+
+    - name: Set server list directly
+      set_fact:
+        server_list: "{{ all_servers.json.items }}"
+
+    - name: Display server list
+      debug:
+        var: server_list
+
+    - name: Iterate over the server list
+      debug:
+        msg: "Server Name: {{ item.name }}" 
+      loop: "{{ server_list }}"
+
+
+    # - name: Process each Managed Server
+    #   include_tasks: stop_single_server.yaml
+    #   loop: "{{ server_list }}"
+    #   loop_control:
+    #     loop_var: current_server
+    #   when: 
+    #     - current_server.state != "SHUTDOWN"
+    #     - current_server.name != "AdminServer"
+
+    # - name: Conclusion
+    #   debug:
+    #     msg: "All managed servers have been processed."

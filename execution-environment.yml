@@ -1,0 +1,36 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-24/ee-supported-rhel9:latest
+
+dependencies:
+  galaxy:
+    collections:
+      - microsoft.ad
+  python:
+    - pywinrm>=0.4.3
+  system:
+    - gcc
+    - zlib-devel
+    - bzip2-devel
+    - openssl-devel
+    - libffi-devel
+    - wget
+
+additional_build_steps:
+  prepend_base:
+    - RUN microdnf install -y gcc zlib-devel bzip2-devel openssl-devel libffi-devel wget
+    - RUN pip3 install --upgrade pip setuptools
+    - WORKDIR /tmp
+    - RUN wget https://www.python.org/ftp/python/3.12.4/Python-3.12.4.tgz
+    - RUN tar xzf Python-3.12.4.tgz
+    - WORKDIR /tmp/Python-3.12.4
+    - RUN ./configure --enable-optimizations && make altinstall
+    - WORKDIR /
+    - RUN ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+    - RUN ln -sf /usr/local/bin/pip3.12 /usr/local/bin/pip3
+    - RUN rm -rf /tmp/Python-3.12.4 /tmp/Python-3.12.4.tgz
+  append_final:
+    - RUN ansible-galaxy collection install microsoft.ad

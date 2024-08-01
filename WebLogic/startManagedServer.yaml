@@ -1,0 +1,100 @@
+---
+- name: Manage WebLogic Managed Server
+  hosts: all
+  vars:
+    admin_url: "http://192.168.21.163:7001"
+    rest_base_url: "{{ admin_url }}/management/weblogic/latest"
+    admin_user: weblogic
+    admin_password: P@ssw0rd
+    managed_server: "Server0"
+
+  tasks:
+    - name: Check if Admin Server is accessible
+      uri:
+        url: "{{ admin_url }}/console"
+        method: GET
+        status_code: [200, 302, 401, 403]
+        validate_certs: no
+      register: admin_server_check
+      ignore_errors: yes
+
+    - name: Display Admin Server check result
+      debug:
+        var: admin_server_check
+
+    - name: Fail if Admin Server is not accessible
+      fail:
+        msg: "Unable to connect to Admin Server. Please ensure it's running and accessible."
+      when: admin_server_check.status == -1
+
+    - name: Get Managed Server status
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/{{ managed_server }}?fields=state"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Accept: "application/json"
+        status_code: [200]
+        validate_certs: no
+      register: initial_server_status
+
+    - name: Display current server status
+      debug:
+        var: initial_server_status.json.state
+
+    - name: Start Managed Server if not running
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/{{ managed_server }}/start"
+        method: POST
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          X-Requested-By: "MyClient"
+          Accept: "application/json"
+          Content-Type: "application/json"
+        body_format: json
+        body: {}
+        status_code: [200, 202]
+        validate_certs: no
+        timeout: 60  # Increased timeout to 60 seconds
+      register: start_result
+      ignore_errors: yes  # Continue even if this task fails
+      when: initial_server_status.json.state != "RUNNING"
+
+    - name: Display start result
+      debug:
+        var: start_result
+      when: initial_server_status.json.state != "RUNNING"
+
+    - name: Wait for server to start
+      uri:
+        url: "{{ rest_base_url }}/domainRuntime/serverLifeCycleRuntimes/{{ managed_server }}?fields=state"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Accept: "application/json"
+        return_content: yes
+        validate_certs: no
+      register: final_server_status
+      until: final_server_status.json.state == 'RUNNING'
+      retries: 20  # Increased number of retries
+      delay: 30
+      when: initial_server_status.json.state != "RUNNING"
+
+    - name: Set final status when server was already running
+      set_fact:
+        final_server_status: "{{ initial_server_status }}"
+      when: initial_server_status.json.state == "RUNNING"
+
+    - name: Display final server status
+      debug:
+        var: final_server_status.json.state
+
+    - name: Conclusion
+      debug:
+        msg: "The managed server {{ managed_server }} is now in {{ final_server_status.json.state }} state."
