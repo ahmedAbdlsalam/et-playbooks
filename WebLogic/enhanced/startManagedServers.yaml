@@ -1,5 +1,5 @@
 ---
-- name: Stop WebLogic Managed Servers
+- name: Start WebLogic Managed Servers
   hosts: all
   vars:
     admin_url: "http://192.168.21.163:7001"
@@ -56,15 +56,13 @@
         msg: "Server Name: {{ item.name }} | State: {{ item.state }}" 
       loop: "{{ server_list }}"
 
-
-
     - name: Process each Managed Server
-      include_tasks: stop_single_server.yaml
+      include_tasks: start_single_server.yaml
       loop: "{{ server_list }}"
       loop_control:
         loop_var: current_server
       when: 
-        - current_server.state != "SHUTDOWN"
+        - current_server.state != "RUNNING"
         - current_server.name != "AdminServer"
 
     - name: Conclusion
