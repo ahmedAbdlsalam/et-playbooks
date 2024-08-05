@@ -1,0 +1,79 @@
+---
+- name: Enhance understanding of tips and tricks of the used code.
+  become: true
+  hosts: localhost
+  vars:
+    rollback_required: false
+    failed_vms: []
+    windows_connection_vars:
+      ansible_connection: winrm
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_transport: ntlm
+    vm_order: []  # Renaming the variable from 'order' to 'vm_order'
+
+  tasks:
+  #   - name: Checking reachability of the VM
+  #     win_wait_for:
+  #       host: "{{ item.vmhost }}"
+  #       port: 5985
+  #       delay: 5
+  #       timeout: 60
+  #     loop: "{{ vm_order }}"
+  #     register: reachability_result
+  #     when: item.os == "Windows"
+  #     ignore_errors: yes
+
+    - name: Print the payload content
+      debug:
+        msg: "Would execute: Start-Service -Name {{ item.1 }}"
+      loop: "{{ vm_order | subelements('services') }}"
+      when: item.0.os == "Windows"
+
+    - name: breaking the Print msg item.1
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ vm_order }}"
+      ignore_errors: yes
+
+    - name: breaking the Print msg item[0]
+      debug:
+        msg: "{{ item.vmhost }}"
+      loop: "{{ vm_order }}"
+      ignore_errors: yes
+
+    - name: breaking the Print add subelements on services key
+      debug:
+        msg: "{{ item.1 }}"
+      loop: "{{ vm_order | subelements('services') }}"
+      ignore_errors: yes
+
+    - name: breaking the Print add subelements on services key
+      debug:
+        msg: "{{ item.0.vmhost }}"
+      loop: "{{ vm_order | subelements('services') }}"
+      ignore_errors: yes
+
+
+    - name: breaking the Print item with existence of subtitles
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ vm_order | subelements('services') }}"
+      ignore_errors: yes
+
+
+    - name: breaking the Print item with without of subtitles
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ vm_order  }}"
+      ignore_errors: yes
+    # - name: breaking the Print msg vm_order.0
+    #   debug:
+    #     msg: "{{ vm_order.0 }}"
+    #   loop: "{{ vm_order | subelements('services') }}"
+    #   ignore_errors: yes
+
+    # - name: breaking the Print msg vm_order.1
+    #   debug:
+    #     msg: "{{ vm_order.1 }}"
+    #   loop: "{{ vm_order | subelements('services') }}"
+    #   ignore_errors: yes

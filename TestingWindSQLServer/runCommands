@@ -1,0 +1,4 @@
+
+to run playbook and passing a payload
+ansible-playbook pre-troub-SQL.yaml -e '@./payload.json'
+

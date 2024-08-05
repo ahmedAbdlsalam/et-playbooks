@@ -1,0 +1,41 @@
+{
+  "order": [
+    {
+      "displayName": "192.168.21.161",
+      "uuid": 91,
+      "os": "Windows",
+      "vmhost": "192.168.21.161",
+      "services": [
+        "MSSQLSERVER",
+        "SQLSERVERAGENT"
+      ],
+      "winrm_user": "administrator",
+      "winrm_password": "@7Medm07med"
+     }
+  ]
+}
+
+{
+  "order": [
+    {
+      "vmhost": "host1",
+      "os": "Linux",
+      "startcmd": "start_command",
+      "stopcmd": "stop_command",
+      "statuscmd": "status_command",
+      "success_regex": "up"
+      "winrm_user": "administrator",
+      "winrm_password": "@7Medm07med"
+    },
+    {
+      "vmhost": "host2",
+      "os": "Windows",
+      "startcmd": "start_command",
+      "stopcmd": "stop_command",
+      "statuscmd": "status_command",
+      "success_regex": "running",
+      "winrm_user": "administrator",
+      "winrm_password": "@7Medm07med"
+    }
+  ]
+}
