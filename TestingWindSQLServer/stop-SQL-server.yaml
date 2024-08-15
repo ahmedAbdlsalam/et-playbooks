@@ -78,21 +78,36 @@
           when: item.os == 'Linux'
           register: start_result_linux
 
+        # - name: Start services (Windows)
+        #   win_service:
+        #     name: "{{ item.1 }}"
+        #     state: started
+        #   delegate_to: "{{ item.0.vmhost }}"
+        #   loop: "{{ order | subelements('services') }}"
+        #   when: item.0.os == 'Windows'
+        #   register: start_result_windows
+        #   vars: 
+        #     ansible_user: "{{ item.0.winrm_user }}"
+        #     ansible_password: "{{ item.0.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
         - name: Start services (Windows)
           win_service:
-            name: "{{ item.1 }}"
+            name: "{{ item.services }}"
             state: started
-          delegate_to: "{{ item.0.vmhost }}"
-          loop: "{{ order | subelements('services') }}"
-          when: item.0.os == 'Windows'
+          delegate_to: "{{ item.vmhost }}"
+          loop: "{{ order }}"
+          when: item.os == 'Windows'
           register: start_result_windows
           vars: 
-            ansible_user: "{{ item.0.winrm_user }}"
-            ansible_password: "{{ item.0.winrm_password }}"
+            ansible_user: "{{ item.winrm_user }}"
+            ansible_password: "{{ item.winrm_password }}"
             ansible_connection: winrm
             ansible_winrm_server_cert_validation: ignore
             ansible_winrm_transport: ntlm
 
+            
         - name: Wait for services to start (if port is specified) - Linux
           wait_for:
             host: "{{ item.vmhost }}"

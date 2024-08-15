@@ -1,0 +1,12 @@
+reference to cognos start stop on Windows and Linux.
+
+1: Windows:- 
+    https://www.ibm.com/docs/en/openpages/8.2.0?topic=sscs-using-windows-operating-system-start-stop-cognos-service
+
+
+2: Linux:
+    https://www.ibm.com/docs/en/openpages/8.2.0?topic=sscs-using-linux-operating-system-start-stop-cognos-service
+
+
+
+    

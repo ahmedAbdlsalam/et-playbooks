@@ -1,10 +1,11 @@
+# this payload is working on stopping mssql WindServer service on Windows server
 {
   "order": [
     {
       "displayName": "192.168.21.161",
       "uuid": 91,
       "os": "Windows",
-      "vmhost": "192.168.21.161",
+      "vmhost": "192.168.1.171",
       "services": [
         "MSSQLSERVER",
         "SQLSERVERAGENT"

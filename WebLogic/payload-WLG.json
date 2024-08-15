@@ -1,0 +1,18 @@
+Payload for weblogic 12c and 11c
+
+{
+  "order": [
+    {
+      "displayName": "192.168.21.161",
+      "uuid": 91,
+      "os": "Windows",
+      "vmhost": "192.168.21.161",
+      "startcmd": "[ {{ domainPath1 + startCommand1 }}, ]",
+      "stopcmd": "[{{ domainPath1 + startCommand1 }}, ]",
+      "wlg-admin-URL":"{{ admin url }"
+     }
+  ]
+}
+
+
+

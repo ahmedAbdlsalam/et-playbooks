@@ -1,0 +1,113 @@
+
+"payload for weblogic 12c and 11c"
+
+{
+  "order": [
+    {
+      "displayName": "192.168.21.161",
+      "uuid": 91,
+      "os": "Windows",
+      "vmhost": "192.168.21.161",
+      "startcmd": "[ {{ domainPath1 + startCommand1 }}, ]",
+      "stopcmd": "[{{ domainPath1 + startCommand1 }}, ]",
+      "wlg-admin-URL":"{{ admin url }",
+      "WLGVersion":"v12c"
+     }
+  ]
+}
+
+"Actual payload example for start script at WLG app server"
+"assuming input from the turbonomic for destruptive action on server'au10202' and the order is 0 unindependent"
+{
+  'order': [{
+    "DisplayName": "au10202",
+    "uuid": "randomNumber",
+    "os": "Linux",
+    "vmhost": "au10202",
+    "startcmd": "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/startNodeManager.sh",
+    "stopcmd":" /weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/stopNodeManager.sh",
+    "WLGAdminURL":"http://au10202:20001/console",
+    "WLGVersion":"v12c"
+  },
+  {
+    "DisplayName": "au10202",
+    "uuid": "randomNumber",
+    "os": "Linux",
+    "vmhost": "au10202",
+    "startcmd": "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/startWebLogic.sh",
+    "stopcmd":"/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/stopWebLogic.sh",
+    "WLGAdminURL":"http://au10202:20001/console",
+    "WLGVersion":"v12c"
+  },
+  {    
+  "DisplayName": "au10202",
+  "uuid": "randomNumber",
+  "os": "Linux",
+  "vmhost": "au10202",
+  "startcmd": "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/startNodeManager.sh",
+  "stopcmd":" /weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/stopNodeManager.sh",
+  "WLGAdminURL":"http://au10202:20001/console",
+  "WLGVersion":"v12c"
+  },
+  {    
+  "DisplayName": "au10202",
+  "uuid": "randomNumber",
+  "os": "Linux",
+  "vmhost": "au10202",
+  "startcmd": "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/startWebLogic.sh",
+  "stopcmd":"/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/stopWebLogic.sh",
+  "WLGAdminURL":"http://au10202:20001/console",
+  "WLGVersion":"v12c"
+  }
+  ]
+}
+
+
+"Different look for the payload"
+
+
+{
+  'order': [
+    "DisplayName": "au10202",
+    "uuid": "randomNumber",
+    "os": "Linux",
+    "vmhost": "au10202",
+    "startcmd":"[ "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/startNodeManager.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/ bin/startWebLogic.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/startNodeManager.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/ bin/startWebLogic.sh"
+                  ]",
+    "stopcmd":"[  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/bin/stopNodeManager.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCPE_domain/ bin/stopWebLogic.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/bin/stopNodeManager.sh",
+                  "/weblogic_uat/app/middleware/user_projects/domains/CWEUAT_EOCUI_domain/ bin/stopWebLogic.sh"
+                  ]",
+    "WLGAdminURL":"http://au10202:20001/console",
+    "WLGVersion":"v12c"
+
+  ]
+}
+
+
+
+"Actual payload example for start script at WLG DB server if the DB type is Oracle"
+"assuming input from the turbonomic for destruptive action on server'AU20969' and the order is 0 unindependent"
+
+{
+  'order': [
+    "DisplayName": "AU20969",
+    "uuid": "randomNumber",
+    "os": "Linux",
+    "vmhost": "AU20969",
+    "stopcmd":"sudo su – oracle
+              snrctl start LISTENER_$ORACLE_SID
+              sqlplus / as sysdba << EOF
+              startup;
+              exit;",
+    "startcmd":"sudo su – oracle
+    lsnrctl stop LISTENER_$ORACLE_SID
+    sqlplus / as sysdba << EOF
+    shutdown immediate;
+    exit;",
+  ]
+}

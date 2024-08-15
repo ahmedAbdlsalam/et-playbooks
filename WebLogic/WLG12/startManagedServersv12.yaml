@@ -2,7 +2,7 @@
 - name: Start WebLogic Managed Servers
   hosts: all
   vars:
-    admin_url: "http://192.168.21.163:7001"
+    admin_url: "http:192.168.21.160/:7001"
     rest_base_url: "{{ admin_url }}/management/wls/latest"
     admin_user: weblogic
     admin_password: P@ssw0rd
