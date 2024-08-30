@@ -1,0 +1,18 @@
+# Contents of shutdown_admin_server.yml
+- name: Shutdown Admin Server
+  uri:
+    url: "{{ admin_url }}/management/weblogic/latest/domainRuntime/serverLifeCycleRuntimes/AdminServer/forceShutdown"
+    method: POST
+    user: "{{ admin_user }}"
+    password: "{{ admin_password }}"
+    force_basic_auth: yes
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+    validate_certs: no
+  register: admin_shutdown_result
+  ignore_errors: yes
+
+- name: Log Admin Server shutdown result
+  debug:
+    msg: "Admin Server shutdown attempt result: {{ admin_shutdown_result.status }}"

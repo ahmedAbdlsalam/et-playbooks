@@ -5,10 +5,6 @@
   vars:
     rollback_required: false
     failed_vms: []
-    windows_connection_vars:
-      ansible_connection: winrm
-      ansible_winrm_server_cert_validation: ignore
-      ansible_winrm_transport: ntlm
 
   tasks:
     - name: Analyze payload and set rollback capability
@@ -93,15 +89,15 @@
         #     ansible_winrm_server_cert_validation: ignore
         #     ansible_winrm_transport: ntlm
 
-        - name: Debug order variable
-          debug:
-            var: order
+        # - name: Debug order variable
+        #   debug:
+        #     var: order
           
-        - name: Debug item in loop
-          debug:
-            var: item
-          loop: "{{ order }}"
-          when: item.os == 'Windows'
+        # - name: Debug item in loop
+        #   debug:
+        #     var: item
+        #   loop: "{{ order }}"
+        #   when: item.os == 'Windows'
 
         # - name: Start services (Windows)
         #   win_service:
@@ -116,27 +112,27 @@
         #     ansible_connection: winrm
         #     ansible_winrm_server_cert_validation: ignore
         #     ansible_winrm_transport: ntlm
-        - name: Prepare Windows hosts
-          set_fact:
-            windows_hosts: "{{ order | selectattr('os', 'equalto', 'Windows') | list }}"
+        # - name: Prepare Windows hosts
+        #   set_fact:
+        #     windows_hosts: "{{ order | selectattr('os', 'equalto', 'Windows') | list }}"
 
-        - name: Depug the payload
-          ansible.builtin.debug:
-            msg: " the query {{ item.services }} and the host {{ item.vmhost }}"
-          loop: "{{ windows_hosts }}"
+        # - name: Depug the payload
+        #   ansible.builtin.debug:
+        #     msg: " the query {{ item.services }} and the host {{ item.vmhost }}"
+        #   loop: "{{ windows_hosts }}"
 
-        - name: Start services (Windows)
-          win_service:
-            name: "{{ item.services }}"
-            state: started
-          loop: "{{ windows_hosts }}"
-          delegate_to: "{{ item.vmhost }}"
-          vars:
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Start services (Windows)
+        #   win_service:
+        #     name: "{{ item.services }}"
+        #     state: started
+        #   loop: "{{ windows_hosts }}"
+        #   delegate_to: "{{ item.vmhost }}"
+        #   vars:
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
 
         - name: Wait for services to start (if port is specified) - Linux
           wait_for:
@@ -146,19 +142,19 @@
           loop: "{{ order }}"
           when: item.check_port is defined and item.os == 'Linux'
 
-        - name: Wait for services to start (if port is specified) - Windows
-          win_wait_for:
-            host: "{{ item.vmhost }}"
-            port: "{{ item.check_port | default(omit) }}"
-            timeout: 300
-          loop: "{{ order }}"
-          when: item.check_port is defined and item.os == 'Windows'
-          vars: 
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Wait for services to start (if port is specified) - Windows
+        #   win_wait_for:
+        #     host: "{{ item.vmhost }}"
+        #     port: "{{ item.check_port | default(omit) }}"
+        #     timeout: 300
+        #   loop: "{{ order }}"
+        #   when: item.check_port is defined and item.os == 'Windows'
+        #   vars: 
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
           
         - name: Check service status (command method) - Linux
           ansible.builtin.command: "{{ item.statuscmd }}"
@@ -168,19 +164,19 @@
           when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Linux'
           ignore_errors: yes
 
-        - name: Check service status (command method) - Windows
-          win_shell: "{{ item.statuscmd }}"
-          delegate_to: "{{ item.vmhost }}"
-          loop: "{{ order }}"
-          register: status_result_windows
-          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
-          ignore_errors: yes
-          vars:
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Check service status (command method) - Windows
+        #   win_shell: "{{ item.statuscmd }}"
+        #   delegate_to: "{{ item.vmhost }}"
+        #   loop: "{{ order }}"
+        #   register: status_result_windows
+        #   when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
+        #   ignore_errors: yes
+        #   vars:
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
 
         - name: Check service status (URL method) - Both Linux and Windows
           uri:
@@ -221,17 +217,17 @@
           loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
           when: item.os == 'Linux'
 
-        - name: Stop services on failed VMs (Windows)
-          win_shell: "{{ item.stopcmd }}"
-          delegate_to: "{{ item.vmhost }}"
-          loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
-          when: item.os == 'Windows'
-          vars:
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Stop services on failed VMs (Windows)
+        #   win_shell: "{{ item.stopcmd }}"
+        #   delegate_to: "{{ item.vmhost }}"
+        #   loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
+        #   when: item.os == 'Windows'
+        #   vars:
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
 
         - name: Restart services on successfully started VMs (Linux)
           ansible.builtin.command: "{{ item.startcmd }}"
@@ -239,17 +235,17 @@
           loop: "{{ order | difference(failed_vms) | intersect(rollback_capable_vms) }}"
           when: item.os == 'Linux'
 
-        - name: Restart services on successfully started VMs (Windows)
-          win_shell: "{{ item.startcmd }}"
-          delegate_to: "{{ item.vmhost }}"
-          loop: "{{ order | difference(failed_vms) | intersect(rollback_capable_vms) }}"
-          when: item.os == 'Windows'
-          vars: 
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Restart services on successfully started VMs (Windows)
+        #   win_shell: "{{ item.startcmd }}"
+        #   delegate_to: "{{ item.vmhost }}"
+        #   loop: "{{ order | difference(failed_vms) | intersect(rollback_capable_vms) }}"
+        #   when: item.os == 'Windows'
+        #   vars: 
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
 
       when: rollback_required | default(false)
 
@@ -262,19 +258,19 @@
           when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Linux'
           ignore_errors: yes
 
-        - name: Final status check (command method) - Windows
-          win_shell: "{{ item.statuscmd }}"
-          delegate_to: "{{ item.vmhost }}"
-          loop: "{{ order }}"
-          register: final_status_cmd_windows
-          when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
-          ignore_errors: yes
-          vars:
-            ansible_user: "{{ item.winrm_user }}"
-            ansible_password: "{{ item.winrm_password }}"
-            ansible_connection: winrm
-            ansible_winrm_server_cert_validation: ignore
-            ansible_winrm_transport: ntlm
+        # - name: Final status check (command method) - Windows
+        #   win_shell: "{{ item.statuscmd }}"
+        #   delegate_to: "{{ item.vmhost }}"
+        #   loop: "{{ order }}"
+        #   register: final_status_cmd_windows
+        #   when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Windows'
+        #   ignore_errors: yes
+        #   vars:
+        #     ansible_user: "{{ item.winrm_user }}"
+        #     ansible_password: "{{ item.winrm_password }}"
+        #     ansible_connection: winrm
+        #     ansible_winrm_server_cert_validation: ignore
+        #     ansible_winrm_transport: ntlm
 
         - name: Final status check (URL method) - Both Linux and Windows
           uri:

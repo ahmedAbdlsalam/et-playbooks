@@ -1,0 +1,24 @@
+---
+- name: Display hostname and restart httpd on RHEL 8
+  hosts: all
+  #become: yes  # This enables privilege escalation (sudo)
+
+  tasks:
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: host_name
+      changed_when: false  # This task never changes the system
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        msg: "The hostname is: {{ host_name.stdout }}"
+
+    - name: Restart httpd service
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted
+      register: httpd_status
+
+    - name: Display httpd restart status
+      ansible.builtin.debug:
+        msg: "HTTPD restart status: {{ 'Success' if httpd_status.changed else 'Failed or already running' }}"

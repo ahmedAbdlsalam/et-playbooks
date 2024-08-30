@@ -1,0 +1,117 @@
+---
+- name: Stop WebLogic Managed Servers
+  hosts: all
+  vars_files:
+    - weblogic_vars.yml  # Centralized variable file
+  vars:
+    parallel_shutdown: true
+    graceful_timeout: 300
+    shutdown_admin_server: false
+
+  tasks:
+    - name: Check if Admin Server is accessible
+      uri:
+        url: "{{ admin_url }}/console"
+        method: GET
+        status_code: [200, 302, 401, 403]
+        validate_certs: no
+      register: admin_server_check
+      ignore_errors: yes
+
+    - name: Fail if Admin Server is not accessible
+      fail:
+        msg: "Unable to connect to Admin Server. Please ensure it's running and accessible."
+      when: admin_server_check.status == -1
+
+    - name: Get all servers
+      uri:
+        url: "{{ rest_base_url }}/servers"
+        method: GET
+        user: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Accept: "application/json"
+        status_code: [200]
+        validate_certs: no
+      register: all_servers
+
+    - name: Set server list
+      set_fact:
+        server_list: "{{ all_servers.json['items'] | selectattr('state', 'ne', 'shutdown') | list }}"
+
+    - name: Display servers to be shut down
+      debug:
+        msg: "Servers to be shut down: {{ server_list | map(attribute='name') | join(', ') }}"
+
+    - name: Shutdown servers
+      include_tasks: shutdown_server.yml
+      loop: "{{ server_list }}"
+      loop_control:
+        loop_var: server
+      when: server.name != "AdminServer" or shutdown_admin_server
+
+    - name: Shutdown Admin Server
+      include_tasks: shutdown_admin_server.yml
+      when: shutdown_admin_server
+
+    - name: Generate shutdown report
+      template:
+        src: shutdown_report.j2
+        dest: /tmp/weblogic_shutdown_report_{{ ansible_date_time.iso8601 }}.txt
+
+    - name: Display shutdown summary
+      debug:
+        msg: "Shutdown process completed. Check the report at /tmp/weblogic_shutdown_report_{{ ansible_date_time.iso8601 }}.txt"
+
+# Contents of shutdown_server.yml
+- name: Attempt to stop server {{ server.name }}
+  uri:
+    url: "{{ rest_base_url }}/servers/id/{{ server.name }}/shutdown"
+    method: POST
+    user: "{{ admin_user }}"
+    password: "{{ admin_password }}"
+    force_basic_auth: yes
+    headers:
+      X-Requested-By: "MyClient"
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body: 
+      timeout: "{{ graceful_timeout }}"
+      ignoreSessions: true
+    status_code: [200, 202]
+    validate_certs: no
+  register: shutdown_result
+  async: 3600
+  poll: 0
+  when: parallel_shutdown | bool
+
+- name: Wait for server {{ server.name }} to stop
+  async_status:
+    jid: "{{ shutdown_result.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 30
+  delay: 60
+  when: parallel_shutdown | bool
+
+- name: Check final status of server {{ server.name }}
+  uri:
+    url: "{{ rest_base_url }}/servers/id/{{ server.name }}"
+    method: GET
+    user: "{{ admin_user }}"
+    password: "{{ admin_password }}"
+    force_basic_auth: yes
+    headers:
+      Accept: "application/json"
+    return_content: yes
+    validate_certs: no
+  register: final_server_status
+
+- name: Log shutdown result for {{ server.name }}
+  debug:
+    msg: "Server {{ server.name }} final status: {{ final_server_status.json.state }}"
+
+
+

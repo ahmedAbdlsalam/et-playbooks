@@ -1,0 +1,12 @@
+# Template for shutdown_report.j2
+Shutdown Report for {{ ansible_date_time.iso8601 }}
+
+{% for server in server_list %}
+Server: {{ server.name }}
+Final Status: {{ final_server_status.json.state }}
+{% endfor %}
+
+{% if shutdown_admin_server %}
+Admin Server:
+Shutdown Attempt Result: {{ admin_shutdown_result.status }}
+{% endif %}

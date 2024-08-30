@@ -10,7 +10,7 @@
       "vmhost": "192.168.21.161",
       "startcmd": "[ {{ domainPath1 + startCommand1 }}, ]",
       "stopcmd": "[{{ domainPath1 + startCommand1 }}, ]",
-      "wlg-admin-URL":"{{ admin url }",
+      "WLG_admin_URL":"{{ admin_url }",
       "WLGVersion":"v12c"
      }
   ]
@@ -64,8 +64,6 @@
 
 
 "Different look for the payload"
-
-
 {
   'order': [
     "DisplayName": "au10202",
