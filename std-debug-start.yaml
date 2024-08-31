@@ -1,8 +1,8 @@
 ---
 - name: Print Hello World on dynamic inventory
-  become: true
-  become_method: sudo
-  become_user: root
+  # become: true
+  # become_method: sudo
+  # become_user: root
   hosts: localhost
 
   tasks:
