@@ -1,7 +1,6 @@
 ---
 - name: Service Management with Enhanced Error Handling and Flexible Validation for Linux and Windows
   hosts: localhost
-  gather_facts: false
   vars:
     rollback_required: false
     failed_vms: []
