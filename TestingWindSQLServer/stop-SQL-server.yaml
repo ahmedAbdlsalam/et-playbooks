@@ -68,10 +68,10 @@
         msg: "The following VMs are unreachable: {{ unreachable_vms | map(attribute='vmhost') | join(', ') }}"
       when: unreachable_vms | length > 0
 
-    - name: Start services
+    - name: Stop services
       block:
-        - name: Execute start command (Linux)
-          ansible.builtin.command: "{{ item.startcmd }}"
+        - name: Execute stop command (Linux)
+          ansible.builtin.command: "{{ item.stopcmd }}"
           delegate_to: "{{ item.vmhost }}"
           loop: "{{ order }}"
           when: item.os == 'Linux'
@@ -92,15 +92,15 @@
             ansible_winrm_server_cert_validation: ignore
             ansible_winrm_transport: ntlm
 
-        - name: Debug order variable
-          debug:
-            var: order
+        # - name: Debug order variable
+        #   debug:
+        #     var: order
           
-        - name: Debug item in loop
-          debug:
-            var: item
-          loop: "{{ order }}"
-          when: item.os == 'Windows'
+        # - name: Debug item in loop
+        #   debug:
+        #     var: item
+        #   loop: "{{ order }}"
+        #   when: item.os == 'Windows'
 
         - name: Start services (Windows)
           win_service:
