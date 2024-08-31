@@ -12,16 +12,16 @@
     order: []  # Renaming the variable from 'order' to 'order'
 
   tasks:
-  #   - name: Checking reachability of the VM
-  #     win_wait_for:
-  #       host: "{{ item.vmhost }}"
-  #       port: 5985
-  #       delay: 5
-  #       timeout: 60
-  #     loop: "{{ order }}"
-  #     register: reachability_result
-  #     when: item.os == "Windows"
-  #     ignore_errors: yes
+    - name: Checking reachability of the VM
+      win_wait_for:
+        host: "{{ item.vmhost }}"
+        port: 5985
+        delay: 5
+        timeout: 60
+      loop: "{{ order }}"
+      register: reachability_result
+      when: item.os == "Windows"
+      ignore_errors: yes
 
     - name: Print the payload content
       debug:

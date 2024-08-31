@@ -3,7 +3,7 @@
   "order": [
     {
       "displayName": "192.168.21.161",
-      "uuid": 91,
+      "os": 91,
       "os": "Windows",
       "vmhost": "192.168.1.171",
       "services": [
@@ -22,7 +22,7 @@
   "order": [
     {
       "displayName": "192.168.21.161",
-      "uuid": 91,
+      "os": 91,
       "os": "Windows",
       "vmhost": "192.168.1.171",
       "services":  "MSSQLSERVER",
@@ -56,3 +56,7 @@
     }
   ]
 }
+
+{"extra_vars": "{'order': [{'displayName': 'Dx3407', 'os': 1960, 'vmhost': 'Dx3407', 'startcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/DmgrProfile01/bin/startManager.sh', 'stopcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/DmgrProfile01/bin/stopManager.sh', 'statuscmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/DmgrProfile01/bin/serverStatus.sh'}, {'displayName': 'Dx3407', 'os': 1961, 'vmhost': 'Dx3407', 'startcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/startNode.sh', 'stopcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/stopNode.sh', 'statuscmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/serverStatus.sh'}, {'displayName': 'Dx3407', 'os': 1962, 'vmhost': 'Dx3407', 'startcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/startServer.sh', 'stopcmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/stopServer.sh', 'statuscmd': '/bpm_uat/app/ibm/BPM/v8.5/profiles/NEWUATNode1Profile/bin/serverStatus.sh'}]}"}
+
+{"extra_vars": "{'order': [{'displayName': '169.38.78.211', 'os': 'Linux', 'vmhost': '169.38.78.211', 'startcmd': '/opt/IBM/WebSphere/AppServer/profiles/Dmgr/bin/startManager.sh', 'stopcmd': '/opt/IBM/WebSphere/AppServer/profiles/Dmgr/bin/stopManager.sh', 'statuscmd': '/opt/IBM/WebSphere/AppServer/profiles/Dmgr/bin/serverStatus.sh dmgr'}, {'displayName': '169.38.78.211', 'os': 'Linux', 'vmhost': '169.38.78.211', 'startcmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/startNode.sh', 'stopcmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/stopNode.sh', 'statuscmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/serverStatus.sh'}, {'displayName': '169.38.78.211', 'os': 'Linux', 'vmhost': '169.38.78.211', 'startcmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/startServer.sh server1', 'stopcmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/stopServer.sh server1', 'statuscmd': '/opt/IBM/WebSphere/AppServer/profiles/AppServ01/bin/serverStatus.sh server1'}]}"}
