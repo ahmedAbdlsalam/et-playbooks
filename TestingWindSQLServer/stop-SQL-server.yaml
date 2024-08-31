@@ -83,7 +83,7 @@
             state: started
           delegate_to: "{{ item.0.vmhost }}"
           loop: "{{ order | subelements('services') }}"
-          when: item.0.os == 'Windows'
+          when: item.0.os == 'Windows' | default (false)
           register: start_result_windows
           vars: 
             ansible_user: "{{ item.0.winrm_user }}"
