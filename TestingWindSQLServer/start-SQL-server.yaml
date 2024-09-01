@@ -107,7 +107,7 @@
             name: "{{ item.services }}"
             state: started
           loop: "{{ order }}"
-          when: item.os == 'Windows'
+          when: item.os == 'Windows' | default(false)
           delegate_to: "{{ item.vmhost }}"
           vars:
             ansible_user: "{{ item.winrm_user }}"
