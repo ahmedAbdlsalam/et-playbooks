@@ -73,6 +73,8 @@
         - name: Execute stop command (Linux)
           ansible.builtin.command: "{{ item.stopcmd }}"
           delegate_to: "{{ item.vmhost }}"
+          become: yes
+          become_method: sudo
           loop: "{{ order }}"
           when: item.os == 'Linux'
           register: start_result_linux
@@ -103,7 +105,7 @@
         - name: Prepare Windows hosts
           set_fact:
             windows_hosts: "{{ order | selectattr('os', 'equalto', 'Windows') | list }}"
-            
+
 
         - name: Wait for services to start (if port is specified) - Linux
           wait_for:
@@ -130,6 +132,8 @@
         - name: Check service status (command method) - Linux
           ansible.builtin.command: "{{ item.statuscmd }}"
           delegate_to: "{{ item.vmhost }}"
+          become: yes
+          become_method: sudo
           loop: "{{ order }}"
           register: status_result_linux
           when: item.statuscmd is defined and item.statuscmd | length > 0 and item.os == 'Linux'
@@ -185,6 +189,8 @@
         - name: Stop services on failed VMs (Linux)
           ansible.builtin.command: "{{ item.stopcmd }}"
           delegate_to: "{{ item.vmhost }}"
+          become: yes
+          become_method: sudo
           loop: "{{ failed_vms | intersect(rollback_capable_vms) }}"
           when: item.os == 'Linux'
 
