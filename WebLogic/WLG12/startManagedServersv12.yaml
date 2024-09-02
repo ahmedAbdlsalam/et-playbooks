@@ -2,7 +2,7 @@
 - name: Start WebLogic Managed Servers
   hosts: all
   vars:
-    admin_url: "http://192.168.21.160:7001"
+    admin_url: "http://192.168.21.163:7001"
     rest_base_url: "{{ admin_url }}/management/wls/latest"
     admin_user: weblogic
     admin_password: P@ssw0rd
@@ -35,26 +35,13 @@
         validate_certs: no
       register: all_servers
 
-    - name: Display all servers
-      debug:
-        var: all_servers.json
-
     - name: Set server list directly
       set_fact:
         server_list: "{{ all_servers.json['items'] }}"
 
-    - name: Display the type of server_list
-      debug:
-        msg: "Type of server_list: {{ server_list | type_debug }}"
-
     - name: Display server list
       debug:
         var: server_list
-
-    - name: Iterate over the server list
-      debug:
-        msg: "Server Name: {{ item.name }} | State: {{ item.state }}" 
-      loop: "{{ server_list }}"
 
     - name: Attempt to start server
       uri:
@@ -73,15 +60,10 @@
         validate_certs: no
         timeout: 60
       register: start_result
-      ignore_errors: yes
       loop: "{{ server_list }}"
       when: 
         - item.state != "running"
         - item.name != "AdminServer"
-
-    - name: Display start result
-      debug:
-        var: start_result
 
     - name: Wait for server to start
       uri:
@@ -95,9 +77,9 @@
         return_content: yes
         validate_certs: no
       register: final_server_status
-      until: final_server_status.json.state == 'running'
-      retries: 20
-      delay: 30
+      until: final_server_status.json.item.state == 'running'
+      retries: 15
+      delay: 20
       loop: "{{ server_list }}"
       when: 
         - item.state != "running"
@@ -105,13 +87,11 @@
 
     - name: Display final server status
       debug:
-        msg: "The managed server {{ item.name }} is now in {{ final_server_status.results[index].json.state }} state."
-      loop: "{{ server_list }}"
-      loop_control:
-        index_var: index
+        msg: "The managed server {{ item.json.item.name }} is now in {{ item.json.item.state }} state."
+      loop: "{{ final_server_status.results }}"
       when: 
-        - item.state != "running"
-        - item.name != "AdminServer"
+        - item is not skipped
+        - item.item.name != "AdminServer"
 
     - name: Conclusion
       debug:
