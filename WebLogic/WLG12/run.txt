@@ -1,0 +1,48 @@
+ansible-playbook   startManagedServersv12.yaml -e '@./payload.json'
+
+path:
+/home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/
+
+stopNodeManager.sh
+startNodeManager.sh
+
+stopManagedWebLogic.sh
+startManagedWebLogic.sh
+
+commands:
+for stop:
+
+nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/stopManagedWebLogic.sh &
+nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/stopNodeManager.sh &
+
+
+for start:
+
+nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/startNodeManager.sh &
+nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/startManagedWebLogic.sh &
+
+
+{
+  'order': [{
+    "DisplayName": "192.168.21.163",
+    "uuid": "234",
+    "os": "Linux",
+    "vmhost": "192.168.21.163",
+    "startcmd": "nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/startNodeManager.sh &",
+    "stopcmd": "nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/stopManagedWebLogic.sh &",
+    "WLGAdminURL":"http://192.168.21.163:7001",
+    "WLGVersion":"v12c"
+  },
+  {
+    "DisplayName": "192.168.21.163",
+    "uuid": "234",
+    "os": "Linux",
+    "vmhost": "192.168.21.163",
+    "startcmd": "nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/startManagedWebLogic.sh &",
+    "stopcmd": "nohub /home/ahmed/Oracle/Middleware/Oracle_Home/user_projects/domains/wl_server/bin/stopNodeManager.sh &",
+    "WLGAdminURL":"http://192.168.21.163:7001",
+    "WLGVersion":"v12c"
+  }
+  ]
+}
+
