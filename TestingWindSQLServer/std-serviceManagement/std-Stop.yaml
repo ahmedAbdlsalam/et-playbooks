@@ -157,7 +157,7 @@
         - name: Evaluate service status
           ansible.builtin.assert:
             that: >-
-              (item.statuscmd is defined and item.stdout is regex(item.success_regex | default('up'))) or
+              (item.statuscmd is defined and item.stdout is regex(item.success_regex | default('down'))) or
               (item.check_url is defined and item.status == 200) or
               (item.check_port is defined)
             fail_msg: "Failed to start service on {{ item.item.vmhost }}"

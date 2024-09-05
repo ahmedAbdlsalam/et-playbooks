@@ -159,7 +159,7 @@
               (item.check_url is defined and item.status == 200) or
               (item.check_port is defined)
             fail_msg: "Failed to start service on {{ item.item.vmhost }}"
-            success_msg: "Successfully started service on {{ item.item.vmhost }}"
+            success_msg: "Successfully stopped service on {{ item.item.vmhost }}"
           loop: "{{ status_result_linux.results | default([]) + status_result_windows.results | default([]) + url_status_result.results | default([]) }}"
           register: assert_result
           ignore_errors: yes
